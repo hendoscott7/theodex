@@ -79,7 +79,7 @@
     .for { font-size: 13px; }
       .bands { flex: 1 0 auto; }
     .band { display: block; flex: none !important; overflow: visible; }
-    .band:last-child { flex: 1 0 auto !important; }   /* last colour runs to the bottom, no white gap */
+    .band:last-child { flex: 1 0 auto !important; min-height: 40vh; }   /* last colour runs to the bottom */
     .main { grid-template-columns: 40px 1fr 40px; column-gap: 14px; padding: 18px 16px; align-items: center; }
     .num, .go { width: 40px; height: 40px; font-size: 16px; margin: 0; }
     .go { grid-row: 1; grid-column: 3; }
@@ -137,7 +137,11 @@ const WORKS = [
 ];
 
 const $ = id => document.getElementById(id);
-document.documentElement.style.background = WORKS[WORKS.length - 1].color;
+// Paint the page itself in the bottom card's colour, so Safari's toolbar area,
+// overscroll and anything below the last card match it.
+const base = WORKS[WORKS.length - 1].color;
+document.documentElement.style.backgroundColor = base;
+document.body.style.backgroundColor = base;
 const bandsEl = $('bands');
 const fmt = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const nl = s => s.replace(/\n/g, ' <br>');
