@@ -47,6 +47,7 @@
   .band.on .go { transform: none; opacity: 1; transition-delay: .08s; }
   .name { font-weight: 800; font-size: clamp(56px, 7.4vw, 112px); line-height: .9; letter-spacing: -.055em; margin: 0; white-space: nowrap; }
   .name + .name { grid-column: 2; }
+  .rest { display: none; }
   .go { margin-top: 14px; }
   .go { grid-row: 2; grid-column: 1; align-self: center; }
 
@@ -74,11 +75,35 @@
 
   @media (max-width: 760px) {
     body { height: auto; min-height: 100vh; overflow: auto; }
-    .band { grid-template-columns: 1fr; --closed: 104px; }
-    .side { display: none; }
-    .band.on .side { display: grid; border-left: 0; border-top: 1px solid rgba(0,0,0,.14); margin: 0 24px 20px; padding: 16px 0 0; }
-    .band.on { flex-basis: auto; }
+    .top { padding: 14px 16px; }
+    .logo { font-size: 22px; }
+    .for { font-size: 13px; }
+    .clock { width: 28px; height: 28px; }
+    .bands { flex: 1 0 auto; }
+    .band { display: block; flex: none !important; overflow: visible; }
+    .band:last-child { flex: 1 0 auto !important; }   /* last colour runs to the bottom, no white gap */
+    .main { grid-template-columns: 40px 1fr 40px; column-gap: 14px; padding: 18px 16px; align-items: center; }
+    .num, .go { width: 40px; height: 40px; font-size: 16px; margin: 0; }
+    .go { grid-row: 1; grid-column: 3; }
+    .go svg { width: 18px; height: 18px; }
+    .name { font-size: clamp(32px, 9.6vw, 48px); letter-spacing: -.05em; line-height: 1; overflow: visible; }
+    .name ~ .name { display: none; }
+    .rest { display: inline; }
+    .side br { display: none; }
+
+    /* details slide open */
+    .side {
+      display: grid; grid-template-rows: auto auto auto auto; border-left: 0; border-top: 1px solid transparent;
+      margin: 0 16px; padding: 0; max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height .4s var(--ease), padding .4s var(--ease), opacity .25s, border-color .25s;
     }
+    .band.on .side { max-height: 1000px; padding: 14px 0 20px; opacity: 1; border-top-color: rgba(0,0,0,.14); transition-delay: 0s, 0s, .08s, 0s; }
+    .side h3, .side p { font-size: 14px; }
+    .side p { margin-top: 10px; max-width: none; }
+    .icon { width: 48px; height: 48px; }
+    .shot { margin-top: 18px; }
+    .side .when { margin-top: 14px; }
+  }
   @media (prefers-reduced-motion: reduce) { .band, .go, .shot, .when, .ruler .head { transition: none !important; } }
 </style>
 </head>
@@ -122,14 +147,14 @@ const WORKS = [
 const $ = id => document.getElementById(id);
 const bandsEl = $('bands');
 const fmt = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-const nl = s => s.replace(/\n/g, '<br>');
+const nl = s => s.replace(/\n/g, ' <br>');
 
 WORKS.forEach((w, i) => {
   const b = document.createElement('section');
   b.className = 'band'; b.style.setProperty('--c', w.color);
   b.innerHTML = `
     <div class="main">
-      <span class="num">${i + 1}</span><h2 class="name">${w.name[0]}</h2>
+      <span class="num">${i + 1}</span><h2 class="name">${w.name[0]}${w.name[1] ? `<span class="rest"> ${w.name[1]}</span>` : ''}</h2>
       <a class="go" href="${w.url}" aria-label="Open ${w.name.join(' ')}"><svg viewBox="0 0 24 24"><path d="M5 12h13M12 5.5L18.5 12 12 18.5"/></svg></a>${w.name[1] ? `<h2 class="name" aria-hidden="true">${w.name[1]}</h2>` : ''}
     </div>
     <div class="side">
@@ -139,13 +164,17 @@ WORKS.forEach((w, i) => {
       <img class="shot" src="${w.image}" alt="${w.name.join(' ')}">
       <span class="when">Updated ${fmt(w.updated)}</span>
     </div>`;
-  b.addEventListener('mouseenter', () => select(i));
-  b.addEventListener('click', e => { if (current === i && !e.target.closest('a')) location.href = w.url; else select(i); });
+  b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') select(i); });
+  b.addEventListener('click', e => {
+    if (e.target.closest('a')) return;              // the arrow is a real link
+    if (current === i) location.href = w.url;        // already open: go
+    else { e.preventDefault(); select(i); }          // first tap just opens the band
+  });
   bandsEl.appendChild(b);
 });
 
 let current = -1;
-bandsEl.addEventListener('mouseleave', () => select(WORKS.length - 1));
+bandsEl.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') select(WORKS.length - 1); });
 // Lands with the bottom card open; hovering a card opens it.
 function select(i) {
   current = i < 0 ? -1 : (i + WORKS.length) % WORKS.length;
