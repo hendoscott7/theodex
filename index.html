@@ -45,6 +45,7 @@
   }
   .go svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
   .band.on .go { transform: none; opacity: 1; transition-delay: .08s; }
+  .band:not(.on) .go { pointer-events: none; visibility: hidden; }   /* only an open card can be entered */
   .name { font-weight: 800; font-size: clamp(56px, 7.4vw, 112px); line-height: .9; letter-spacing: -.055em; margin: 0; white-space: nowrap; }
   .name + .name { grid-column: 2; }
   .rest { display: none; }
@@ -157,7 +158,9 @@ WORKS.forEach((w, i) => {
   b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') select(i); });
   // Tapping a band only opens or closes it. The black arrow is the only way into a work.
   b.addEventListener('click', e => {
-    if (e.target.closest('a')) return;
+    const a = e.target.closest('a');
+    if (a && current === i) return;                 // arrow on the open card: go
+    if (a) e.preventDefault();
     select(current === i ? -1 : i);
   });
   bandsEl.appendChild(b);
