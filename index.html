@@ -5,119 +5,160 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>theodex</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root { --ink: #111; --dim: #8d8d8d; --card: #efefef; --gap: clamp(12px, 1.6vw, 24px); }
+  :root { --ink: #0c0c0c; --soft: rgba(0,0,0,.42); --bar: #f1f1f1; --ease: cubic-bezier(.65,0,.2,1); }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: #fafafa; color: var(--ink); }
-  body { font: 400 18px/1.3 "Instrument Serif", Georgia, serif; -webkit-font-smoothing: antialiased; padding: var(--gap); }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font: 400 14px/1.25 "Inter", "Helvetica Neue", Arial, sans-serif; color: var(--ink); background: #fff;
+    -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
   a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
-  header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: clamp(12px, 2vw, 28px) clamp(20px, 4vw, 64px) clamp(28px, 4vw, 56px);
+  /* corner labels */
+  .top { display: flex; justify-content: space-between; align-items: baseline; padding: 18px 24px; }
+  .logo { font-size: 26px; font-weight: 600; letter-spacing: -.04em; }
+  .logo span { color: #b9b9b9; }
+  .for { font-size: 15px; color: #b9b9b9; letter-spacing: -.02em; }
+
+  /* bands */
+  .bands { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .band {
+    position: relative; flex: 0 0 var(--closed, 132px); min-height: 0; overflow: hidden;
+    background: var(--c); display: grid; grid-template-columns: 1fr minmax(260px, 34%); cursor: pointer;
+    transition: flex-basis .32s var(--ease), flex-grow .32s var(--ease), box-shadow .25s;
   }
-  .logo { font: 500 clamp(22px, 1.8vw, 28px)/1 "Inter", system-ui, sans-serif; letter-spacing: -.035em; }
-  .clock { width: clamp(32px, 2.6vw, 42px); height: auto; }
-  .clock .face { fill: none; stroke: var(--ink); stroke-width: 1.5; }
-  .clock line { stroke: var(--ink); stroke-linecap: round; }
-  .clock .s { stroke: #b0b0b0; }
-
-  main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
-
-  .card {
-    position: relative; background: var(--card); border-radius: clamp(24px, 2.6vw, 40px);
-    padding: clamp(28px, 4vw, 64px); overflow: hidden;
-    display: grid; grid-template-rows: auto 1fr auto; gap: clamp(28px, 4vw, 56px);
-    min-height: clamp(520px, 52vw, 760px);
-    isolation: isolate;
+  .band.on { flex: 1 0 var(--closed, 132px); z-index: 1; }
+  /* the open card casts its shadow up onto the card above; the top card has none */
+  .band.on:not(:first-child) { box-shadow: 0 -12px 28px -10px rgba(0,0,0,.32); }
+  .main { display: grid; grid-template-columns: 64px 1fr; column-gap: 22px; align-content: start; padding: 20px 24px; }
+  .num, .go {
+    width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 22px; font-weight: 600;
   }
-  .card::before {
-    content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity .6s;
-    background:
-      radial-gradient(60% 55% at var(--x, 50%) var(--y, 40%), rgba(255,255,255,.95), rgba(255,255,255,0) 70%),
-      radial-gradient(80% 70% at calc(100% - var(--x, 50%)) 100%, rgba(214,226,255,.7), rgba(214,226,255,0) 70%),
-      radial-gradient(70% 60% at 0% 0%, rgba(255,228,214,.6), rgba(255,228,214,0) 70%);
+  .num { background: rgba(0,0,0,.08); margin-top: 12px; }
+  .go {
+    background: var(--ink); color: var(--c); margin-top: 6px;
+    transform: scale(.4); opacity: 0; transition: transform .25s var(--ease), opacity .15s;
   }
-  .card:hover::before { opacity: 1; }
-  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
-  .name { margin: 0; font-weight: 400; font-size: clamp(44px, 4.6vw, 80px); line-height: .92; letter-spacing: -.025em; }
-  .btn {
-    flex: none; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.7);
-    display: grid; place-items: center; margin-top: 6px;
-    box-shadow: 0 1px 2px rgba(0,0,0,.05);
-    transform: scale(.85); opacity: .6;
-    transition: transform .4s cubic-bezier(.2,.7,.2,1), opacity .4s, background .4s, box-shadow .4s;
+  .go svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .band.on .go { transform: none; opacity: 1; transition-delay: .08s; }
+  .name { font-weight: 800; font-size: clamp(56px, 7.4vw, 112px); line-height: .9; letter-spacing: -.055em; margin: 0; white-space: nowrap; }
+  .name + .name { grid-column: 2; }
+  .go { margin-top: 14px; }
+  .go { grid-row: 2; grid-column: 1; align-self: center; }
+
+  .side { border-left: 1px solid rgba(0,0,0,.14); margin: 18px 0; padding: 4px 24px 4px 24px;
+          display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto 1fr auto; column-gap: 16px; }
+  .side h3 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.15; letter-spacing: -.01em; }
+  .side p { margin: 24px 0 0; color: var(--soft); font-size: 15px; line-height: 1.15; max-width: 16em; }
+  .side .when { grid-row: 4; font-weight: 600; font-size: 13px; opacity: 0; transition: opacity .2s; }
+  .band.on .when { opacity: 1; transition-delay: .1s; }
+  .icon { grid-column: 2; grid-row: 1 / 3; width: 76px; height: 76px; }
+  .icon svg { width: 100%; height: 100%; overflow: visible; stroke: var(--ink); color: var(--ink); stroke-width: 3.4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .icon .ghost { opacity: .45; stroke-width: 1.6; }
+  .shot {
+    grid-column: 1 / -1; grid-row: 3; align-self: center; margin-top: 18px; width: 100%; aspect-ratio: 16 / 10; max-height: 100%;
+    object-fit: cover; border-radius: 12px; display: block; box-shadow: 0 20px 40px -18px rgba(0,0,0,.35);
+    opacity: 0; transform: translateY(10px); transition: opacity .2s, transform .3s var(--ease);
   }
-  .btn svg { width: 16px; height: 16px; stroke: var(--ink); stroke-width: 1.4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .card:hover .btn { transform: none; opacity: 1; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 10px 26px rgba(0,0,0,.08); }
+  .band.on .shot { opacity: 1; transform: none; transition-delay: .06s; }
 
-  /* the short screen */
-  .stage { display: grid; place-items: center; }
-  .screen {
-    width: 86%; aspect-ratio: 16 / 10; border-radius: 18px; overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 30px 60px -24px rgba(0,0,0,.3);
-    transform: translateY(6px) scale(.98);
-    transition: transform .7s cubic-bezier(.2,.7,.2,1);
-  }
-  .card:hover .screen { transform: translateY(0) scale(1); }
-  .screen-in { width: 100%; height: 100%; overflow: hidden; position: relative; background: #e4e4e3; }
-  .screen img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.02); transition: transform 1.2s cubic-bezier(.2,.7,.2,1); }
-  .card:hover .screen img { transform: scale(1); }
-  .soon { position: absolute; inset: 0; display: grid; place-items: center; color: #a3a3a3; font-style: italic; font-size: clamp(22px, 2vw, 30px); }
+  .right { display: flex; align-items: center; gap: 14px; }
+  .top { align-items: center; }
+  .clock { width: 34px; height: 34px; border-radius: 50%; background: var(--ink); flex: none; }
+  .clock svg { width: 100%; height: 100%; display: block; }
+  .clock line { stroke: #fff; stroke-linecap: round; }
 
-  .line { margin: 0; color: var(--dim); font: 400 clamp(15px, 1.15vw, 17px)/1.45 "Inter", system-ui, sans-serif; letter-spacing: -.01em; max-width: 30em; }
-
-  footer { padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 64px); color: var(--dim); font: 400 14px/1.3 "Inter", system-ui, sans-serif; letter-spacing: -.01em; }
-
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } .card { min-height: 0; } }
-  @media (prefers-reduced-motion: reduce) { .card *, .card { transition: none !important; } }
+  @media (max-width: 760px) {
+    body { height: auto; min-height: 100vh; overflow: auto; }
+    .band { grid-template-columns: 1fr; --closed: 104px; }
+    .side { display: none; }
+    .band.on .side { display: grid; border-left: 0; border-top: 1px solid rgba(0,0,0,.14); margin: 0 24px 20px; padding: 16px 0 0; }
+    .band.on { flex-basis: auto; }
+    }
+  @media (prefers-reduced-motion: reduce) { .band, .go, .shot, .when, .ruler .head { transition: none !important; } }
 </style>
 </head>
 <body>
-<header>
-  <a class="logo" href="./">theodex</a>
-  <svg class="clock" viewBox="0 0 40 40" role="img" aria-label="Clock">
-    <circle class="face" cx="20" cy="20" r="18.5"/>
-    <line id="hh" x1="20" y1="20" x2="20" y2="10.5" stroke-width="2"/>
-    <line id="mh" x1="20" y1="20" x2="20" y2="6" stroke-width="1.5"/>
-    <line id="sh" class="s" x1="20" y1="22.5" x2="20" y2="5" stroke-width="1"/>
-    <circle cx="20" cy="20" r="1.4" fill="currentColor"/>
-  </svg>
+<header class="top">
+  <a class="logo" href="./">theo<span>dex</span></a>
+  <span class="right"><span class="for">Things made for Theo</span>
+    <span class="clock" role="img" aria-label="Clock"><svg viewBox="0 0 40 40">
+      <line id="hh" x1="20" y1="20" x2="20" y2="12.5" stroke-width="2.4"/>
+      <line id="mh" x1="20" y1="20" x2="20" y2="8.5" stroke-width="1.8"/>
+      <line id="sh" x1="20" y1="22" x2="20" y2="7.5" stroke-width="1" style="stroke:#ffffff80"/>
+      <circle cx="20" cy="20" r="1.4" fill="#fff"/>
+    </svg></span></span>
 </header>
 
-<main id="works"></main>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="rough-a"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.6"/></filter>
+  <filter id="rough-b"><feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="2" seed="11"/><feDisplacementMap in="SourceGraphic" scale="3.4"/></filter>
+</svg>
+<main class="bands" id="bands"></main>
 
-<footer>Things made for Theo.</footer>
 
 <script>
-// Add works here: name, one short line, link, still image and last-updated date.
-// Cards sort themselves, newest first. Leave image out to show "Coming soon".
+// Add works here. Bands show in this order, top to bottom.
+// name: one or two lines. title + text: the small column. icon: SVG paths on a 64×64 grid.
 const WORKS = [
-  { name: "Harry's Knoll", line: "A painted knoll to mow, and a hedgehog to feed.", url: "https://hendoscott7.github.io/harrys-knoll/", image: "img/harrys-knoll.jpg", updated: "2026-11-08T18:50" },
-  { name: "T-Time", line: "Spin for tonight's dinner.", url: "https://hendoscott7.github.io/t-time/", image: "img/t-time.jpg", updated: "2026-11-08T21:50" }
-].sort((a, b) => b.updated.localeCompare(a.updated));
+  {
+    name: ["Harry's", "Knoll"], color: "#96a46f",
+    title: "A painted knoll\nto wander", text: "Mow the lawn in stripes.\nFeed Harry the hedgehog.",
+    url: "https://hendoscott7.github.io/harrys-knoll/", image: "img/harrys-knoll.jpg", updated: "2026-11-08T18:50",
+    icon: '<path d="M10 46C9 33 20 22 33 22C42 22 48 26 52 31C55 34 58 38 59 41C59.5 44 55 45.5 50 45.5C36 46.5 22 46.2 10 46Z"/><path d="M14 34l-7-3M18 28l-5-6M25 24l-2-8M32 22l1-9M39 23l4-7M46 27l7-4M50 33l7-1"/><circle cx="49" cy="37" r="1.4" fill="currentColor"/><circle cx="59" cy="42" r="1.2" fill="currentColor"/><path d="M20 46l-1 5M38 46l1 5"/>'
+  },
+  {
+    name: ["T-Time"], color: "#f5d873",
+    title: "Spin for\ntonight's dinner", text: "Veto what he won't eat.\nKeep what he will.",
+    url: "https://hendoscott7.github.io/t-time/", image: "img/t-time.jpg", updated: "2026-11-08T21:50",
+    icon: '<path d="M8 34C20 32.5 44 32.5 56 34C55 48 45 55.5 32 55.5C19 55.5 9.5 48 8 34Z"/><path d="M24 55.5L23 59C29 59.5 35 59.5 41 59L40 55.5"/><path d="M23 27C19 22 27 18.5 23 12M32.5 27C28.5 21 36.5 17.5 32.5 10M42 27C38 22 46 18.5 42 13"/><path d="M46 33.5L56.5 21.5"/><ellipse cx="58.5" cy="19" rx="2.6" ry="3.6" transform="rotate(40 58.5 19)"/>'
+  }
+];
 
-const grid = document.getElementById('works');
-WORKS.forEach(w => {
-  const card = document.createElement(w.url ? 'a' : 'div');
-  card.className = 'card';
-  if (w.url) card.href = w.url;
-  card.innerHTML = `
-    <div class="top"><h2 class="name">${w.name}</h2>${w.url ? '<span class="btn" aria-label="Open"><svg viewBox="0 0 16 16"><path d="M4.5 11.5l7-7M6 4.5h5.5V10"/></svg></span>' : ''}</div>
-    <div class="stage"><div class="screen"><div class="screen-in">
-      ${w.image ? `<img src="${w.image}" alt="${w.name}">` : '<span class="soon">Coming soon</span>'}
-    </div></div></div>
-    <p class="line">${w.line}</p>`;
-  card.addEventListener('pointermove', e => {
-    const r = card.getBoundingClientRect();
-    card.style.setProperty('--x', ((e.clientX - r.left) / r.width * 100) + '%');
-    card.style.setProperty('--y', ((e.clientY - r.top) / r.height * 100) + '%');
-  });
-  grid.appendChild(card);
+const $ = id => document.getElementById(id);
+const bandsEl = $('bands');
+const fmt = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+const nl = s => s.replace(/\n/g, '<br>');
+
+WORKS.forEach((w, i) => {
+  const b = document.createElement('section');
+  b.className = 'band'; b.style.setProperty('--c', w.color);
+  b.innerHTML = `
+    <div class="main">
+      <span class="num">${i + 1}</span><h2 class="name">${w.name[0]}</h2>
+      <a class="go" href="${w.url}" aria-label="Open ${w.name.join(' ')}"><svg viewBox="0 0 24 24"><path d="M5 12h13M12 5.5L18.5 12 12 18.5"/></svg></a>${w.name[1] ? `<h2 class="name" aria-hidden="true">${w.name[1]}</h2>` : ''}
+    </div>
+    <div class="side">
+      <h3>${nl(w.title)}</h3>
+      <span class="icon"><svg viewBox="0 0 64 64"><g filter="url(#rough-a)">${w.icon}</g><g filter="url(#rough-b)" class="ghost">${w.icon}</g></svg></span>
+      <p>${nl(w.text)}</p>
+      <img class="shot" src="${w.image}" alt="${w.name.join(' ')}">
+      <span class="when">Updated ${fmt(w.updated)}</span>
+    </div>`;
+  b.addEventListener('mouseenter', () => select(i));
+  b.addEventListener('click', e => { if (current === i && !e.target.closest('a')) location.href = w.url; else select(i); });
+  bandsEl.appendChild(b);
 });
 
-const hands = { h: document.getElementById('hh'), m: document.getElementById('mh'), s: document.getElementById('sh') };
+let current = -1;
+bandsEl.addEventListener('mouseleave', () => select(WORKS.length - 1));
+// Lands with the bottom card open; hovering a card opens it.
+function select(i) {
+  current = i < 0 ? -1 : (i + WORKS.length) % WORKS.length;
+  [...bandsEl.children].forEach((b, k) => b.classList.toggle('on', k === current));
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') select(current + 1);
+  if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') select(current <= 0 ? WORKS.length - 1 : current - 1);
+  if (e.key === 'Enter' && current >= 0) location.href = WORKS[current].url;
+});
+select(WORKS.length - 1);
+
+const hands = { h: $('hh'), m: $('mh'), s: $('sh') };
 function tick() {
   const d = new Date(), sec = d.getSeconds(), min = d.getMinutes() + sec / 60, hr = d.getHours() % 12 + min / 60;
   hands.h.setAttribute('transform', `rotate(${hr * 30} 20 20)`);
